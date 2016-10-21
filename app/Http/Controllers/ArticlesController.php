@@ -50,7 +50,7 @@ class ArticlesController extends Controller
     public function edit(Article $article) {
 
         $tags = Tag::pluck( 'name', 'id');
-         return view('articles.update', ['article' => $article, 'tags' => $tags]);
+        return view('articles.update', ['article' => $article, 'tags' => $tags]);
     }
 
     public function delete() {
@@ -60,11 +60,8 @@ class ArticlesController extends Controller
 
     public function update(Article $article, CreateArticleRequest $request){
 
-        $tags = $request->input('tags');
-
-
-        $article->tags()->attach($tags);
         $article->update(Request::all());
+        $this->syncTags($article, $request->input('tags'));
 
         return redirect('articles');
     }
@@ -73,16 +70,21 @@ class ArticlesController extends Controller
     public function store(CreateArticleRequest $request) {
 
         $article = new Article($request->all());
-        $tags = $request->input('tags');
-
-        dd($tags);
-
-        $article->tags()->attach($tags);
+        $this->syncTags($article, $request->input('tags'));
         Auth::user()->articles()->save($article);
 
         //Session::flash('flash_message', 'Article created');
 
         flash('Article created')->important();
         return redirect('articles');
+    }
+
+    /**
+     * @param Article $article
+     * @param CreateArticleRequest $request
+     */
+    private function syncTags(Article $article, array $tags)
+    {
+        $article->tags()->sync($tags);
     }
 }
